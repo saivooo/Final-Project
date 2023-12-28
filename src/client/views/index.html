@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <title>Test</title>
+</head>
+
+<body>
+
+    <header>
+        <div class="">
+            Logo
+        </div>
+        <div class="">
+            navigation
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <form class="" id="cityDateForm">
+                <label for="whereData">Where will you be going?</label>
+                <input id="where" type="text" name="whereData" value=""
+                    placeholder="Accepted formats: City, State; City; State; Zip Code">
+                    <label for="whenData">When will you be going?</label>
+                <input id="when" type="date" name="whenData" value="">
+                <button id="submit" type="submit">Submit</button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        // Check that service workers are supported
+        if ('serviceWorker' in navigator) {
+            // Use the window load event to keep the page load performant
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js');
+            });
+        }
+    </script>
+</body>
+
+</html>
