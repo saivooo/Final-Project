@@ -95,6 +95,8 @@ function handleRowSelection(event) {
     }
 }
 
+let temperatureInCelsius = null;
+
 function getWeatherForCity() {
     const when = document.getElementById('when').value;
     const whenAsDate = new Date(when);
@@ -107,6 +109,26 @@ function getWeatherForCity() {
     } else {
         console.log("Select a row")
     }
+    // localStorage.setItem('latitude', rowDataObject.latitude);
+    // localStorage.setItem('longitude', rowDataObject.longitude);
+
+    fetch(`/getWeatherForecast?lat=${rowDataObject.latitude}&lon=${rowDataObject.longitude}`, {
+        method: 'GET'
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("-------------------------------------------------")
+            console.log(data)
+            console.log("-------------------------------------------------")
+        })
+        .catch(error => {
+            console.error(error)
+        });
 }
 
 export { searchForCity };
