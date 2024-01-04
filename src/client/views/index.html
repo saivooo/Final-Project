@@ -23,14 +23,14 @@
                 <label for="whereData">What city will you be going to?</label>
                 <input id="where" type="text" name="whereData" value=""
                     placeholder="Enter the city name or abbreviation...">
-                    <label for="whenData">When will you be going?</label>
+                <label for="whenData">When will you be going?</label>
                 <input id="when" type="date" name="whenData" value="">
                 <button id="submit" type="submit">Submit</button>
             </form>
         </section>
-        <section>
+        <section id="cityResults" class="hide">
             <label>Confirm your desired city</label>
-            <table id="resultsTable">
+            <table id="resultsTable" class="spread-table">
                 <thead>
                     <tr>
                         <th>City</th>
@@ -46,6 +46,7 @@
             </table>
             <button id="acceptCitySelection">Next</button>
         </section>
+        <div class="cardsDiv hide" id="cardsDiv"></div>
     </main>
 
     <script>

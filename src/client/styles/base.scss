@@ -9,5 +9,57 @@ main {
 }
 
 section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
 
+    button {
+        width: 10vw;
+    }
+}
+
+.hide {
+    display: none;
+}
+
+$columns: 6;
+
+// Mixin to set width for columns
+@mixin setColumnWidth($column) {
+  width: percentage(1 / $columns * $column);
+}
+
+// Style for the table
+.spread-table {
+  width: 40%; /* Set table width */
+  border-collapse: collapse; /* Collapse table borders */
+
+  th, td {
+    border: 1px solid #ddd; /* Cell border */
+    padding: 8px; /* Padding for cells */
+    text-align: left; /* Text alignment */
+  }
+
+  th {
+    background-color: #f2f2f2; /* Header background color */
+    padding: 10px; /* Padding for header cells */
+  }
+
+  // Loop to set width for each column
+  @for $i from 1 through $columns {
+    th:nth-child(#{$i}),
+    td:nth-child(#{$i}) {
+      @include setColumnWidth($i); /* Set width for each column */
+    }
+  }
+}
+
+.newCardDiv {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 30px;
+    border: 1px solid blue;
+    border-radius: 10px;
+    background-color: blue;
 }

@@ -1,6 +1,7 @@
 const geoNamesApiUrl = "http://api.geonames.org/searchJSON"
 let dataArray = []
 let totalResultsCount = 0;
+let date;
 
 function searchForCity(event) {
     event.preventDefault();
@@ -14,7 +15,7 @@ function searchForCity(event) {
             return response.json();
         })
         .then(data => {
-            console.log(data);
+            //use map function to extract certain properties from api response data
             dataArray = data.geonames.map(item => {
                 return {
                     city: item.toponymName,
@@ -26,16 +27,16 @@ function searchForCity(event) {
                     longitude: item.lng
                 }
             });
+
+            //remove indexes in the response array if they're not a city
             for (let i = 0; i < dataArray.length; i++) {
                 if (dataArray[i].fclName != 'city, village,...') {
                     dataArray.splice(i, 1);
                 }
             }
-            totalResultsCount = dataArray.length;
-            console.log(dataArray)
-            console.log("---------------")
-            console.log(`Total count of results: ${totalResultsCount}`)
 
+            //update total count after removal of unwanted indexes 
+            totalResultsCount = dataArray.length;
             populateResultsTable();
         })
         .catch(error => {
@@ -44,75 +45,99 @@ function searchForCity(event) {
 
 }
 
+//function to update html to create a table where user will select the correct city
 function populateResultsTable() {
+    //show the HTML section that has the prompt to select the correct city
+    const cityResultsSection = document.getElementById('cityResults');
+    cityResultsSection.classList.remove('hide');
+
     const resultsTableBody = document.getElementById('resultsTableBody');
     resultsTableBody.innerHTML = '';
     const propertiesToDisplay = ['city', 'state', 'countryName', 'latitude', 'longitude']
+
+    //iterate through array that was created in searchForCity
     dataArray.forEach(item => {
         const row = document.createElement('tr');
 
+        //append the property to it's corresponding cell in the row
         propertiesToDisplay.forEach(property => {
             const cell = document.createElement('td');
             cell.textContent = item[property];
             row.appendChild(cell);
         });
 
+        //add a radio button so user can select the correct city
         const radioBtnCell = document.createElement('td');
         const radioBtn = document.createElement('input');
         radioBtn.type = 'radio';
         radioBtn.id = 'selectDestination';
+
+        //append radio button to the cell and append cell to the row
         radioBtnCell.appendChild(radioBtn);
         row.appendChild(radioBtnCell);
 
-
+        //append row to the results table in the UI
         resultsTableBody.appendChild(row);
     });
 
+    //when user changes selection, trigger handleRowSelection
     resultsTableBody.addEventListener('change', handleRowSelection);
 }
 
+//once user clicks next button, it will trigger getWeatherForCity, which will call another api to return the temp in the selected city
 const nextBtn = document.getElementById('acceptCitySelection');
 nextBtn.addEventListener('click', getWeatherForCity);
 
 let rowDataObject = null;
 
+//fucntion that defines rowDataObject as the selected row
 function handleRowSelection(event) {
+    //declare selected row
     const selectedRow = event.target.closest('tr')
+
     if (selectedRow) {
         const rowData = Array.from(selectedRow.cells).slice(0, -1).map(cell => cell.textContent.trim());
-        const propertyLabels = ['city', 'state', 'country', 'latitude', 'longitude'];
+        const propertyLabels = ['city', 'state', 'countryName', 'latitude', 'longitude'];
 
         rowDataObject = rowData.reduce((acc, value, index) => {
             const label = propertyLabels[index];
             if (label) {
                 acc[label] = value;
             }
-            return acc
+            return acc;
         }, {});
-        console.log('Row Data as Array of Objects with Custom Labels:', rowDataObject);
     } else {
         console.log('Please select a row');
     }
 }
 
-let temperatureInCelsius = null;
+let weatherArray = [];
+let minTempCount = null;
+let maxTempCount = null;
 
+//function to call api that gets weather based on latitude & longitude
 function getWeatherForCity() {
+    const cityResultsSection = document.getElementById('cityResults');
+    cityResultsSection.classList.add('hide');
+
     const when = document.getElementById('when').value;
-    const whenAsDate = new Date(when);
+    date = new Date(when);
 
     console.log("User's Selected Date");
-    console.log(whenAsDate);
+    console.log(date);
     if (rowDataObject) {
-        console.log("Your selected city: ", rowDataObject.city)
-        console.log("Your selected state: ", rowDataObject.state)
+        //add details to the LS for later use
+        localStorage.setItem('city', rowDataObject.city);
+        localStorage.setItem('state', rowDataObject.state);
+        localStorage.setItem('country', rowDataObject.countryName);
+        localStorage.setItem('latitude', rowDataObject.latitude);
+        localStorage.setItem('longitude', rowDataObject.longitude);
+        localStorage.setItem('departureDate', date);
     } else {
         console.log("Select a row")
     }
-    // localStorage.setItem('latitude', rowDataObject.latitude);
-    // localStorage.setItem('longitude', rowDataObject.longitude);
 
-    fetch(`/getWeatherForecast?lat=${rowDataObject.latitude}&lon=${rowDataObject.longitude}`, {
+    fetch(`/getWeatherForecast?lat=${rowDataObject.latitude}&lon=${rowDataObject.longitude}&units=I`, {
         method: 'GET'
     })
         .then(response => {
@@ -122,13 +147,106 @@ function getWeatherForCity() {
             return response.json();
         })
         .then(data => {
-            console.log("-------------------------------------------------")
-            console.log(data)
-            console.log("-------------------------------------------------")
+            //map the min and max temps received from api to weatherArray
+            weatherArray = data.data.map(item => {
+                return {
+                    maxTemp: item.max_temp,
+                    minTemp: item.min_temp
+                }
+            })
+            //Addup and average the min & max temps
+            weatherArray.forEach(x => {
+                maxTempCount += x.maxTemp
+                minTempCount += x.minTemp
+            })
+            const avgMaxTemp = (maxTempCount / weatherArray.length);
+            const avgMinTemp = (minTempCount / weatherArray.length);
+            //add min & max temps to LS for later use
+            localStorage.setItem('avgMaxTemp', avgMaxTemp)
+            localStorage.setItem('avgMinTemp', avgMinTemp)
+
         })
         .catch(error => {
             console.error(error)
         });
+
+    pixabayPic();
+}
+
+function pixabayPic() {
+    fetch(`/getPixabayPic?q=${localStorage.getItem('city')} ${localStorage.getItem('state')} ${localStorage.getItem('country')}&page=1&per_page=3`, {
+        method: 'GET'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('-------------------------------');
+        console.log(data.hits[0]);
+        localStorage.setItem('imageUrl', data.hits[0].webformatURL)
+        console.log('-------------------------------');
+
+        createNewTravelCard();
+    })
+        .catch(error => {
+            console.error(error)
+        });
+}
+
+function createNewTravelCard() {
+    const cardsDiv = document.getElementById('cardsDiv');
+    const newCardDiv = document.createElement('div');
+    newCardDiv.classList.add('newCardDiv');
+
+    const image = document.createElement('img');
+    image.classList.add('imageForDiv');
+    image.src = localStorage.getItem('imageUrl');
+    image.alt = `${localStorage.getItem('city')}, ${localStorage.getItem('state')}, ${localStorage.getItem('country')}`;
+    newCardDiv.appendChild(image);
+    
+    const where = document.createElement('p');
+    where.classList.add('detailsPTag');
+    where.textContent = `My trip to: ${localStorage.getItem('city')}, ${localStorage.getItem('state')}, ${localStorage.getItem('country')}`
+    newCardDiv.appendChild(where);
+    
+    const when = document.createElement('p');
+    when.classList.add('detailsPTag');
+    when.textContent = `Departing: ${formatDate(date)}`;
+    newCardDiv.appendChild(when);
+
+    const saveBtn = document.createElement('button');
+    saveBtn.classList.add('saveTrip');
+    saveBtn.textContent = 'save trip';
+    newCardDiv.appendChild(saveBtn);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.classList.add('deleteTrip');
+    removeBtn.textContent = 'remove trip';
+    newCardDiv.appendChild(removeBtn);
+
+    const weatherHead = document.createElement('p');
+    weatherHead.classList.add('weatherHead');
+    weatherHead.textContent = `Average weather during this time is:`;
+    newCardDiv.appendChild(weatherHead);
+
+    const avgTemps = document.createElement('p');
+    avgTemps.classList.add('avgTemps');
+    avgTemps.textContent = `High: ${localStorage.getItem('avgMaxTemp')}, Low: ${localStorage.getItem('avgMinTemp')}`;
+    newCardDiv.appendChild(avgTemps);
+
+    cardsDiv.appendChild(newCardDiv);
+    document.getElementById('cardsDiv').classList.remove('hide')
+}
+
+function formatDate(date) {
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${month}/${day}/${year}`;
 }
 
 export { searchForCity };
