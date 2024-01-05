@@ -234,7 +234,7 @@ function createNewTravelCard() {
 
     const avgTemps = document.createElement('p');
     avgTemps.classList.add('avgTemps');
-    avgTemps.textContent = `High: ${localStorage.getItem('avgMaxTemp')}, Low: ${localStorage.getItem('avgMinTemp')}`;
+    avgTemps.textContent = `High: ${parseInt(localStorage.getItem('avgMaxTemp'))}° F Low: ${parseInt(localStorage.getItem('avgMinTemp'))}° F`;
     newCardDiv.appendChild(avgTemps);
 
     cardsDiv.appendChild(newCardDiv);
