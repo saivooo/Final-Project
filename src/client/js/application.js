@@ -35,6 +35,10 @@ function searchForCity(event) {
                 }
             }
 
+            if (dataArray.length > 5) {
+                dataArray.splice(5);
+            }
+
             //update total count after removal of unwanted indexes 
             totalResultsCount = dataArray.length;
             populateResultsTable();
@@ -82,13 +86,13 @@ function populateResultsTable() {
 
     //when user changes selection, trigger handleRowSelection
     resultsTableBody.addEventListener('change', handleRowSelection);
+    //once user clicks next button, it will trigger getWeatherForCity, which will call another api to return the temp in the selected city
+    const nextBtn = document.getElementById('acceptCitySelection');
+    nextBtn.addEventListener('click', getWeatherForCity);
 }
 
-//once user clicks next button, it will trigger getWeatherForCity, which will call another api to return the temp in the selected city
-const nextBtn = document.getElementById('acceptCitySelection');
-nextBtn.addEventListener('click', getWeatherForCity);
 
-let rowDataObject = null;
+let rowDataObject;
 
 //fucntion that defines rowDataObject as the selected row
 function handleRowSelection(event) {
@@ -177,20 +181,20 @@ function pixabayPic() {
     fetch(`/getPixabayPic?q=${localStorage.getItem('city')} ${localStorage.getItem('state')} ${localStorage.getItem('country')}&page=1&per_page=3`, {
         method: 'GET'
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('-------------------------------');
-        console.log(data.hits[0]);
-        localStorage.setItem('imageUrl', data.hits[0].webformatURL)
-        console.log('-------------------------------');
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('-------------------------------');
+            console.log(data.hits[0]);
+            localStorage.setItem('imageUrl', data.hits[0].webformatURL)
+            console.log('-------------------------------');
 
-        createNewTravelCard();
-    })
+            createNewTravelCard();
+        })
         .catch(error => {
             console.error(error)
         });
@@ -201,41 +205,55 @@ function createNewTravelCard() {
     const newCardDiv = document.createElement('div');
     newCardDiv.classList.add('newCardDiv');
 
+    //image tag to store 
     const image = document.createElement('img');
     image.classList.add('imageForDiv');
     image.src = localStorage.getItem('imageUrl');
     image.alt = `${localStorage.getItem('city')}, ${localStorage.getItem('state')}, ${localStorage.getItem('country')}`;
     newCardDiv.appendChild(image);
-    
+
+    //div to store trip details + save/remove buttons
+    const detailsDiv = document.createElement('div');
+    detailsDiv.classList.add('detailsDiv');
+
     const where = document.createElement('p');
     where.classList.add('detailsPTag');
     where.textContent = `My trip to: ${localStorage.getItem('city')}, ${localStorage.getItem('state')}, ${localStorage.getItem('country')}`
-    newCardDiv.appendChild(where);
-    
+    detailsDiv.appendChild(where);
     const when = document.createElement('p');
     when.classList.add('detailsPTag');
     when.textContent = `Departing: ${formatDate(date)}`;
-    newCardDiv.appendChild(when);
+    detailsDiv.appendChild(when);
 
     const saveBtn = document.createElement('button');
     saveBtn.classList.add('saveTrip');
     saveBtn.textContent = 'save trip';
-    newCardDiv.appendChild(saveBtn);
-
+    detailsDiv.appendChild(saveBtn);
     const removeBtn = document.createElement('button');
-    removeBtn.classList.add('deleteTrip');
+    removeBtn.classList.add('removeTrip');
     removeBtn.textContent = 'remove trip';
-    newCardDiv.appendChild(removeBtn);
 
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.classList.add('buttons');
+    buttonsDiv.appendChild(saveBtn);
+    buttonsDiv.appendChild(removeBtn);
+    detailsDiv.appendChild(buttonsDiv);
+
+    newCardDiv.appendChild(detailsDiv);
+
+    //div to store weather details
+    const weatherDiv = document.createElement('div');
+    weatherDiv.classList.add('weatherDiv');
     const weatherHead = document.createElement('p');
-    weatherHead.classList.add('weatherHead');
+    weatherHead.classList.add('detailsPTag');
     weatherHead.textContent = `Average weather during this time is:`;
-    newCardDiv.appendChild(weatherHead);
-
+    weatherDiv.appendChild(weatherHead);
     const avgTemps = document.createElement('p');
-    avgTemps.classList.add('avgTemps');
+    avgTemps.classList.add('detailsPTag');
     avgTemps.textContent = `High: ${parseInt(localStorage.getItem('avgMaxTemp'))}° F Low: ${parseInt(localStorage.getItem('avgMinTemp'))}° F`;
-    newCardDiv.appendChild(avgTemps);
+    weatherDiv.appendChild(avgTemps);
+
+    newCardDiv.appendChild(weatherDiv);
 
     cardsDiv.appendChild(newCardDiv);
     document.getElementById('cardsDiv').classList.remove('hide')
